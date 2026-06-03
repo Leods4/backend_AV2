@@ -55,6 +55,15 @@ with app.app_context():
 
 # --- 4. ENDPOINTS CRUD (API RESTful) ---
 
+# ================= ROTA DE CONEXÃO (HEALTH CHECK) =================
+@app.route('/', methods=['GET'])
+def health_check():
+    """Rota raiz necessária para o botão 'Testar conexão' do frontend."""
+    return jsonify({
+        'status': 'Online',
+        'mensagem': 'Conexão com a API realizada com sucesso!'
+    }), 200
+
 # ================= VAGAS =================
 
 # Criar uma nova vaga (POST)
@@ -245,13 +254,16 @@ def chatbot():
                 "erro": "Falha ao processar a resposta com a inteligência artificial.", 
                 "detalhes": str(e)
             }), 500
-        
+
 if __name__ == '__main__':
     port = 5000
     
+    # 1. Adicione o seu token do Ngrok aqui dentro das aspas:
+    ngrok.set_auth_token("3EcmGf3LfqypSchOTvYTc9hQ9Q3_7HsU61hDtoVdeMh4yTNiy")
+    
     # Abre o túnel do ngrok na porta especificada
     public_url = ngrok.connect(port).public_url
-    print(f" * Túnel Ngrok ativo! Acesse sua API por aqui: {public_url}")
+    print(f"\n * Túnel Ngrok ativo! Acesse sua API por aqui: {public_url}\n")
     
-    # Executa a aplicação. use_reloader=False é crucial aqui para evitar erros de limite de conexões do ngrok.
+    # Executa a aplicação
     app.run(debug=True, port=port, use_reloader=False)
