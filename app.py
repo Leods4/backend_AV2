@@ -4,6 +4,7 @@ from flask_cors import CORS  # Importação do CORS adicionada
 from datetime import datetime
 import google.generativeai as genai
 import os
+from pyngrok import ngrok # Importação do ngrok adicionada
 
 # 1. Configuração do Servidor Flask e Banco de Dados SQLite local
 app = Flask(__name__)
@@ -109,7 +110,7 @@ def buscar_vaga(id):
         'modalidade': vaga.modalidade
     }), 200
 
-# Atualizar uma vaga (PUT) - ADICIONADO PARA COMPLETAR O CRUD
+# Atualizar uma vaga (PUT)
 @app.route('/vagas/<int:id>', methods=['PUT'])
 def atualizar_vaga(id):
     vaga = Vaga.query.get(id)
@@ -146,7 +147,7 @@ def deletar_vaga(id):
 
 # ================= CANDIDATOS =================
 
-# Criar um novo candidato (POST) - ADICIONADO
+# Criar um novo candidato (POST)
 @app.route('/candidatos', methods=['POST'])
 def criar_candidato():
     dados = request.get_json()
@@ -171,7 +172,7 @@ def criar_candidato():
 
 # ================= INSCRIÇÕES =================
 
-# Realizar uma inscrição relacionando candidato e vaga (POST) - ADICIONADO
+# Realizar uma inscrição relacionando candidato e vaga (POST)
 @app.route('/inscricoes', methods=['POST'])
 def criar_inscricao():
     dados = request.get_json()
@@ -246,4 +247,11 @@ def chatbot():
             }), 500
         
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = 5000
+    
+    # Abre o túnel do ngrok na porta especificada
+    public_url = ngrok.connect(port).public_url
+    print(f" * Túnel Ngrok ativo! Acesse sua API por aqui: {public_url}")
+    
+    # Executa a aplicação. use_reloader=False é crucial aqui para evitar erros de limite de conexões do ngrok.
+    app.run(debug=True, port=port, use_reloader=False)
