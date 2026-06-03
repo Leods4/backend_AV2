@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import google.generativeai as genai
@@ -49,12 +49,13 @@ with app.app_context():
 
 # --- 4. ENDPOINTS CRUD (API RESTful) ---
 
+# ================= VAGAS =================
+
 # Criar uma nova vaga (POST)
 @app.route('/vagas', methods=['POST'])
 def criar_vaga():
     dados = request.get_json()
     
-    # Validação para garantir que os campos obrigatórios foram enviados
     if not dados or 'titulo' not in dados or 'descricao' not in dados:
         return jsonify({'erro': 'Dados incompletos. Titulo e descricao são obrigatórios.'}), 400
         
@@ -68,7 +69,6 @@ def criar_vaga():
     db.session.add(nova_vaga)
     db.session.commit()
     
-    # Retorna status 201 (Created)
     return jsonify({'mensagem': 'Vaga criada com sucesso!', 'id': nova_vaga.id}), 201
 
 # Listar todas as vagas (GET)
@@ -86,7 +86,6 @@ def listar_vagas():
             'modalidade': vaga.modalidade
         })
         
-    # Retorna status 200 (OK)
     return jsonify(resultado), 200
 
 # Buscar uma vaga específica pelo ID (GET)
@@ -95,7 +94,7 @@ def buscar_vaga(id):
     vaga = Vaga.query.get(id)
     
     if not vaga:
-        return jsonify({'erro': 'Vaga não encontrada'}), 404 # Not Found
+        return jsonify({'erro': 'Vaga não encontrada'}), 404
         
     return jsonify({
         'id': vaga.id,
@@ -104,6 +103,28 @@ def buscar_vaga(id):
         'area': vaga.area,
         'modalidade': vaga.modalidade
     }), 200
+
+# Atualizar uma vaga (PUT) - ADICIONADO PARA COMPLETAR O CRUD
+@app.route('/vagas/<int:id>', methods=['PUT'])
+def atualizar_vaga(id):
+    vaga = Vaga.query.get(id)
+    
+    if not vaga:
+        return jsonify({'erro': 'Vaga não encontrada'}), 404
+        
+    dados = request.get_json()
+    
+    if 'titulo' in dados:
+        vaga.titulo = dados['titulo']
+    if 'descricao' in dados:
+        vaga.descricao = dados['descricao']
+    if 'area' in dados:
+        vaga.area = dados['area']
+    if 'modalidade' in dados:
+        vaga.modalidade = dados['modalidade']
+        
+    db.session.commit()
+    return jsonify({'mensagem': 'Vaga atualizada com sucesso'}), 200
 
 # Deletar uma vaga (DELETE)
 @app.route('/vagas/<int:id>', methods=['DELETE'])
@@ -117,6 +138,60 @@ def deletar_vaga(id):
     db.session.commit()
     
     return jsonify({'mensagem': 'Vaga deletada com sucesso'}), 200
+
+# ================= CANDIDATOS =================
+
+# Criar um novo candidato (POST) - ADICIONADO
+@app.route('/candidatos', methods=['POST'])
+def criar_candidato():
+    dados = request.get_json()
+    
+    if not dados or 'nome' not in dados or 'email' not in dados:
+        return jsonify({'erro': 'Nome e email são obrigatórios.'}), 400
+        
+    # Previne e-mails duplicados
+    if Candidato.query.filter_by(email=dados['email']).first():
+        return jsonify({'erro': 'Este e-mail já está cadastrado.'}), 400
+        
+    novo_candidato = Candidato(
+        nome=dados['nome'],
+        email=dados['email'],
+        telefone=dados.get('telefone', 'Não informado')
+    )
+    
+    db.session.add(novo_candidato)
+    db.session.commit()
+    
+    return jsonify({'mensagem': 'Candidato criado com sucesso!', 'id': novo_candidato.id}), 201
+
+# ================= INSCRIÇÕES =================
+
+# Realizar uma inscrição relacionando candidato e vaga (POST) - ADICIONADO
+@app.route('/inscricoes', methods=['POST'])
+def criar_inscricao():
+    dados = request.get_json()
+    
+    if not dados or 'candidato_id' not in dados or 'vaga_id' not in dados:
+        return jsonify({'erro': 'IDs do candidato e da vaga são obrigatórios.'}), 400
+        
+    # Verifica se os IDs existem no banco de dados
+    candidato = Candidato.query.get(dados['candidato_id'])
+    vaga = Vaga.query.get(dados['vaga_id'])
+    
+    if not candidato:
+        return jsonify({'erro': 'Candidato não encontrado.'}), 404
+    if not vaga:
+        return jsonify({'erro': 'Vaga não encontrada.'}), 404
+        
+    nova_inscricao = Inscricao(
+        candidato_id=dados['candidato_id'],
+        vaga_id=dados['vaga_id']
+    )
+    
+    db.session.add(nova_inscricao)
+    db.session.commit()
+    
+    return jsonify({'mensagem': 'Inscrição realizada com sucesso!', 'id': nova_inscricao.id}), 201
 
 # --- 5. CHATBOT E INTELIGÊNCIA ARTIFICIAL ---
 
@@ -167,4 +242,3 @@ def chatbot():
         
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
