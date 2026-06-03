@@ -1,25 +1,26 @@
-# 🚀 Projeto Integrador: Portal de Vagas e Automação de Estoque
+# 🚀 Projeto Av2: Portal de Vagas e Automação de Estoque
 
-**Desenvolvedores (Dupla):** [Nome do Dev A] e [Nome do Dev B]
+**Disciplina:** Linguagem de Programação III (Análise e Desenvolvimento de Sistemas)  
+**Desenvolvedores (Dupla/Grupo):** [Nome do Dev A] e [Nome do Dev B]
 
-Este repositório contém o código-fonte de dois projetos desenvolvidos em conjunto para a disciplina:
-1. **Portal de Vagas:** Uma API RESTful em Flask integrada a um banco SQLite e à inteligência artificial do Gemini, com frontend em HTML/JS e automações de disparo de mensagens.
-2. **Sistema de Controle de Estoque:** Um painel interativo em Streamlit com automação de planilhas e rotinas de alertas de estoque.
+Este repositório contém o código-fonte de dois projetos desenvolvidos em conjunto para a Avaliação Prática 2 (Av2), divididos em duas entregas principais:
+1. **Portal de Vagas (Sistema Principal):** Uma API RESTful desenvolvida em Flask, integrada a um banco de dados SQLite e à inteligência artificial do Google Gemini. O projeto conta com frontend interativo e automação (RPA) para envio de mensagens.
+2. **Sistema de Controle de Estoque (Paper RPA):** Um painel interativo em Streamlit com automação de planilhas e rotinas de alertas de estoque, servindo como base para o artigo acadêmico exigido na avaliação.
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
-**Parte 1: Portal de Vagas**
-* **Backend & Banco de Dados:** Python, Flask, Flask-REST, Flask-SQLAlchemy, SQLite
-* **Inteligência Artificial:** Google Gemini API (reconhecimento de intenções e respostas abertas)
-* **Frontend:** HTML5, Bootstrap, JavaScript (Fetch API)
-* **Mensageria (RPA):** PyWhatKit (WhatsApp) e smtplib (E-mail Gmail)
+**Parte 1: Portal de Vagas (Projeto Técnico)**
+* **Backend & Banco de Dados:** Python, Flask, Flask-SQLAlchemy, SQLite.
+* **Inteligência Artificial:** Google Gemini API (reconhecimento de intenções para navegação e respostas via chat).
+* **Frontend:** HTML5, CSS3, Bootstrap, JavaScript (Vanilla com Fetch API).
+* **Mensageria (RPA):** PyWhatKit (Automação de WhatsApp Web) e `smtplib` (Envio de e-mails via Gmail).
 
-**Parte 2: Sistema de Controle de Estoque**
-* **Interface & Backend:** Python, Streamlit, sqlite3
-* **Manipulação de Dados:** openpyxl (Excel)
-* **Automação & Alertas:** schedule (agendamento) e plyer (notificações no SO)
+**Parte 2: Sistema de Controle de Estoque (Paper Acadêmico)**
+* **Interface & Banco de Dados Local:** Python, Streamlit, sqlite3.
+* **Manipulação de Dados:** openpyxl (Leitura/Escrita de arquivos Excel).
+* **Automação & Alertas:** schedule (agendamento de tarefas) e plyer (notificações do sistema operacional).
 
 ---
 
@@ -28,37 +29,48 @@ Este repositório contém o código-fonte de dois projetos desenvolvidos em conj
 Antes de executar os projetos, certifique-se de ter instalado em sua máquina:
 * [Python 3.8+](https://www.python.org/downloads/)
 * Gerenciador de pacotes `pip`
-* Uma conta do Google Cloud / Google AI Studio para obter a **Chave de API do Gemini**.
-* Um e-mail do Gmail com **Senha de Aplicativo** gerada (para envio de e-mails via código).
+* Uma chave válida do **Google Gemini API** (via [Google AI Studio](https://aistudio.google.com/)).
+* Uma conta do Gmail com uma **Senha de Aplicativo** gerada (necessário para o script de envio de e-mails não ser bloqueado pelo Google).
 
 ---
 
 ## 📦 Instalação e Configuração
 
 **1. Clone este repositório:**
-```bash
-git clone [https://github.com/seu-usuario/seu-repositorio.git](https://github.com/seu-usuario/seu-repositorio.git)
-cd seu-repositorio
-```
+`git clone https://github.com/seu-usuario/seu-repositorio.git`
+`cd seu-repositorio`
 
 **2. Crie e ative um ambiente virtual (Recomendado):**
-```bash
-python -m venv venv
+`python -m venv venv`
 
-# Para ativar no Windows:
-venv\Scripts\activate
-# Para ativar no Linux/Mac:
-source venv/bin/activate
-```
+*Para ativar no Windows:*
+`venv\Scripts\activate`
+
+*Para ativar no Linux/Mac:*
+`source venv/bin/activate`
 
 **3. Instale as dependências exigidas no projeto:**
-```bash
-pip install flask flask-sqlalchemy google-generativeai pywhatkit streamlit openpyxl schedule plyer
-```
+`pip install flask flask-sqlalchemy google-generativeai pywhatkit streamlit openpyxl schedule plyer`
 
 **4. Configure as Chaves de API e Credenciais:**
-* No arquivo `app.py`, localize a variável `genai.configure(api_key="...")` e insira sua chave do Gemini.
-* No script de envio de e-mail (RPA), insira seu e-mail do Gmail e a senha de aplicativo gerada para autenticação do SMTP.
+* No arquivo `app.py`, localize a variável `genai.configure(api_key="SUA_CHAVE_API_AQUI")` e insira sua chave do Gemini.
+* No script de RPA (`rpa_mensageria.py`), insira seu endereço do Gmail e a senha de aplicativo gerada nas configurações do SMTP.
+
+---
+
+## 🗺️ Endpoints da API REST (Portal de Vagas)
+
+O backend possui suporte a operações CRUD completas para as 3 entidades do sistema:
+
+| Método | Rota | Descrição |
+| :--- | :--- | :--- |
+| `GET` | `/vagas` | Lista todas as vagas disponíveis. |
+| `POST` | `/vagas` | Cria uma nova vaga. |
+| `PUT` | `/vagas/<id>` | Atualiza os dados de uma vaga existente. |
+| `DELETE`| `/vagas/<id>` | Remove uma vaga do sistema. |
+| `POST` | `/candidatos` | Cadastra um novo candidato (valida e-mail único). |
+| `POST` | `/inscricoes` | Relaciona um candidato a uma vaga (candidatura). |
+| `POST` | `/chat` | Envia mensagens para o Chatbot (Gemini IA). |
 
 ---
 
@@ -66,38 +78,37 @@ pip install flask flask-sqlalchemy google-generativeai pywhatkit streamlit openp
 
 Este projeto é dividido em frentes diferentes. Siga os passos abaixo para testar cada uma delas:
 
-### 🟢 1. Rodando o Portal de Vagas (Backend e Frontend)
+### 🟢 1. Rodando o Portal de Vagas (Sistema Principal)
 
-O backend (API) deve estar rodando para que o frontend consiga exibir as vagas, realizar candidaturas e usar o chatbot.
+O backend (API) deve estar rodando para que o frontend consiga exibir as vagas, realizar cadastros de candidatos e processar o chatbot.
 
-1. No terminal, execute o servidor da API Flask:
-   ```bash
-   python app.py
-   ```
-   *O banco de dados `portal_vagas.db` será criado automaticamente na primeira execução e o servidor rodará em `http://127.0.0.1:5000/`.*
+**Passo A: Iniciar o Servidor Flask**
+`python app.py`
 
-2. Com a API rodando, abra o arquivo `index.html` (ou o nome que foi dado à página principal do Portal) no seu navegador web padrão. Você já poderá filtrar vagas e conversar com o chatbot.
+> *Nota: O banco de dados `portal_vagas.db` com as tabelas de Vagas, Candidatos e Inscrições será criado automaticamente na primeira execução. A API estará disponível em `http://127.0.0.1:5000/`.*
 
-3. **Para testar as automações (WhatsApp e E-mail):**
-   Execute o script correspondente do Dev B para simular os alertas de aprovação de candidatura.
-   ```bash
-   python rpa_mensageria.py
-   ```
+**Passo B: Acessar a Interface Web**
+Com a API rodando, abra o arquivo `index.html` (ou a página principal do Frontend) no seu navegador web padrão.
 
-### 🔵 2. Rodando o Sistema de Controle de Estoque
+**Passo C: Testar Automações de RPA (Aprovação/Inscrição)**
+Em um novo terminal, execute o script correspondente para disparar os alertas de WhatsApp e E-mail:
+`python rpa_mensageria.py`
 
-O sistema de estoque utiliza o Streamlit para renderizar a interface no navegador.
+### 🔵 2. Rodando o Sistema de Controle de Estoque (Paper)
 
-1. Abra um novo terminal, ative seu ambiente virtual e navegue até a pasta do estoque.
-2. Execute o comando nativo do Streamlit:
-   ```bash
-   streamlit run app_estoque.py
-   ```
-3. O painel abrirá automaticamente no seu navegador. Os dados gerados e alterados ficarão salvos na planilha manipulada pelo OpenPyXL e no banco `estoque.db`.
+O sistema secundário utiliza o Streamlit para renderizar o painel interativo.
+
+1. Abra um novo terminal e certifique-se de que o ambiente virtual (`venv`) está ativo.
+2. Navegue até o diretório do projeto de estoque.
+3. Execute a aplicação com o comando nativo do Streamlit:
+`streamlit run app_estoque.py`
+
+> *O painel abrirá automaticamente no navegador. Os dados manipulados serão atualizados em tempo real na planilha (via openpyxl) e no banco local.*
 
 ---
 
-## 📄 Notas Adicionais sobre a Apresentação Presencial
+## 📄 Notas Adicionais para a Apresentação Presencial
 
-* Durante a apresentação, a automação de disparo de e-mail e WhatsApp deverá ser executada **ao vivo**, enviando notificações a um contato real da turma.
-* Garanta que o WhatsApp Web da conta emissora esteja devidamente logado caso o script do PyWhatKit exija abertura do navegador.
+* **Público-Alvo:** O sistema deve ser demonstrado com o contexto voltado para os alunos de Processos Gerenciais.
+* **Demonstração ao Vivo:** A automação de disparo de e-mail e WhatsApp (`rpa_mensageria.py`) deverá ser executada ao vivo, enviando notificações reais para um integrante da turma-alvo.
+* **Importante:** Garanta que o *WhatsApp Web* do navegador padrão utilizado pela máquina de apresentação esteja previamente logado antes de rodar o PyWhatKit, para evitar timeout no envio da mensagem.
