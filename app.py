@@ -1,11 +1,16 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS  # Importação do CORS adicionada
 from datetime import datetime
 import google.generativeai as genai
 import os
 
 # 1. Configuração do Servidor Flask e Banco de Dados SQLite local
 app = Flask(__name__)
+
+# Configuração de CORS aberto para todas as origens
+CORS(app) 
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///portal_vagas.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
