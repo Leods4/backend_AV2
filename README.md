@@ -1,5 +1,5 @@
 
-# 🚀 API Portal de Vagas AV2 (Arquitetura MVC)
+# 🚀 API Portal de Vagas AV2
 
 Uma API RESTful desenvolvida em Flask para gerenciamento de vagas de emprego, candidatos e inscrições, agora estruturada sob os princípios de **Model-View-Controller (MVC)** para maior escalabilidade e fácil manutenção.
 
