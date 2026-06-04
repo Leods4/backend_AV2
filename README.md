@@ -136,7 +136,10 @@ Todas as rotas HTTP abaixo delegam o processamento de dados e o controle de stat
   * **Payload esperado:** `{"mensagem": "Quais vagas em Home Office estão abertas?"}`
   * **Resposta da API (JSON Estruturado Dinâmico):**
 ```json
-pip install Flask Flask-SQLAlchemy Flask-Cors pywhatkit python-dotenv pyngrok google-genai
+{
+  "intencao": "consulta_vagas",
+  "resposta": "Atualmente temos as seguintes oportunidades..."
+}
 ```
   * **Como funciona:** O endpoint busca as vagas no banco de dados e as envia junto com a pergunta para o `chatbot.py`. O assistente consome o modelo `gemini-3.1-flash-lite` para responder utilizando estritamente as vagas reais do banco como contexto.
 
