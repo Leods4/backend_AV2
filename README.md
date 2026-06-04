@@ -141,7 +141,14 @@ Todas as rotas HTTP abaixo delegam o processamento de dados e o controle de stat
   "resposta": "Atualmente temos as seguintes oportunidades..."
 }
 ```
-  * **Como funciona:** O endpoint busca as vagas no banco de dados e as envia junto com a pergunta para o `chatbot.py`. O assistente consome o modelo `gemini-3.1-flash-lite` para responder utilizando estritamente as vagas reais do banco como contexto.
+  * **Como funciona:** O endpoint busca as vagas no banco de dados e as injeta no contexto. O modelo `gemini-3.1-flash-lite` analisa a mensagem do usuário e retorna obrigatoriamente um objeto JSON contendo a resposta textual e a intenção mapeada. O backend trata e limpa essa string transformando-a em resposta de API limpa.
+  * **Mapeamento de Intenções (Integração Front-End):**
+
+* consulta_vagas ➡️ Identifica que o usuário busca oportunidades. O frontend intercepta essa intenção e executa uma rolagem suave automática até a seção de filtros de vagas.
+
+* candidatura ➡️ Identifica que o usuário deseja se candidatar ou saber como se inscrever. O frontend exibe um banner informativo orientando o clique direto no card correspondente.
+
+* atendimento_bot ➡️ Utilizada para saudações gerais, encerramentos ou diálogos de suporte padrão.
 
 ---
 
