@@ -1,141 +1,132 @@
-# 🚀 Projeto Av2: Portal de Vagas e Automação de Estoque
 
-**Disciplina:** Linguagem de Programação III (Análise e Desenvolvimento de Sistemas)  
-**Desenvolvedores (Dupla/Grupo):** [Nome do Dev A] e [Nome do Dev B]
+# 🚀 API Portal de Vagas AV2 (Arquitetura MVC)
 
-Este repositório contém o código-fonte de dois projetos desenvolvidos em conjunto para a Avaliação Prática 2 (Av2), divididos em duas entregas principais:
+Uma API RESTful desenvolvida em Flask para gerenciamento de vagas de emprego, candidatos e inscrições, agora estruturada sob os princípios de **Model-View-Controller (MVC)** para maior escalabilidade e fácil manutenção.
 
-1. **Portal de Vagas (Sistema Principal):** Uma API RESTful desenvolvida em Flask, integrada a um banco de dados SQLite e à inteligência artificial do Google Gemini. O projeto conta com frontend interativo, automação (RPA) rodando em segundo plano (via Threads) para envio de mensagens, geração de logs automáticos e integração com o ngrok para expor a API publicamente de forma segura. O backend possui suporte a CORS aberto para integração nativa com o frontend em qualquer ambiente.
-2. **Sistema de Controle de Estoque (Paper RPA):** Um painel interativo em Streamlit com automação de planilhas e rotinas de alertas de estoque, servindo como base para o artigo acadêmico exigido na avaliação.
-
----
-
-## 🛠️ Tecnologias Utilizadas
-
-### Parte 1: Portal de Vagas (Projeto Técnico)
-* **Backend & Banco de Dados:** Python, Flask, Flask-SQLAlchemy, Flask-CORS (permitindo requisições cross-origin), python-dotenv, SQLite.
-* **Exposição de Porta:** Pyngrok (Criação de túnel HTTP para acesso público à API com domínio fixo ou dinâmico).
-* **Inteligência Artificial:** Google Gemini API (reconhecimento de intenções para navegação e respostas via chat modelo *gemini-1.5-flash*).
-* **Mensageria, Automação (RPA) e Logs:** PyWhatKit (WhatsApp Web), smtplib (E-mails via Gmail). Utiliza as bibliotecas nativas `threading` (para execução em segundo plano sem bloquear a API) e `logging` (para registro de atividades e erros na pasta `/logs`).
-
-### Parte 2: Sistema de Controle de Estoque (Paper Acadêmico)
-* **Interface & Banco de Dados Local:** Python, Streamlit, sqlite3.
-* **Manipulação de Dados:** openpyxl (Leitura/Escrita de arquivos Excel).
-* **Automação & Alertas:** schedule (agendamento de tarefas) e plyer (notificações do sistema operacional).
+O projeto inclui funcionalidades avançadas, como:
+- **Automação RPA:** Disparo de notificações via WhatsApp (PyWhatKit) e E-mail (SMTP) em segundo plano.
+- **Inteligência Artificial:** Chatbot integrado ao Google Gemini (via API oficial) para atendimento inteligente aos candidatos.
+- **Túnel Público Dinâmico:** Integração nativa com Ngrok para exposição imediata da API local para a internet.
 
 ---
 
-## ⚙️ Pré-requisitos
+## 📁 Estrutura de Diretórios (MVC)
 
-Antes de executar os projetos, certifique-se de ter instalado em sua máquina:
-* **Python 3.8+** e gerenciador de pacotes `pip`.
-* Uma chave válida do **Google Gemini API** (via Google AI Studio).
-* Uma conta do **Gmail com uma Senha de Aplicativo** gerada (necessária para o envio de e-mails não ser bloqueado pelo Google).
-* Uma conta gratuita no **ngrok** (para obter o seu `authtoken` e manter a estabilidade do túnel da API).
+O antigo arquivo monolítico foi substituído por uma arquitetura em pacotes:
 
----
-
-## 📦 Instalação e Configuração
-
-**1. Clone este repositório:**
-```bash
-git clone [https://github.com/seu-usuario/seu-repositorio.git](https://github.com/seu-usuario/seu-repositorio.git)
-cd seu-repositorio
+```text
+portal_vagas_api/
+│
+├── app/                      # Aplicação Flask (Pacote principal)
+│   ├── __init__.py           # Factory Function: Configura o App, BD e CORS
+│   ├── models.py             # (Models) Classes do SQLAlchemy (Vaga, Candidato, Inscricao)
+│   ├── routes.py             # (Controllers/Views) Definição dos endpoints REST e Blueprints
+│   │
+│   └── services/             # Lógica de Negócios e Integrações
+│       ├── rpa.py            # Orquestração do E-mail e WhatsApp (Logs embutidos)
+│       └── chatbot.py        # Configuração do Client e Prompts do Google Gemini
+│
+├── logs/                     # Diretório gerado automaticamente para os logs (RPA)
+├── .env                      # Variáveis de ambiente (Credenciais e Configurações)
+└── run.py                    # Ponto de entrada: Inicializa o Ngrok e executa o servidor
 ```
 
-**2. Crie e ative um ambiente virtual (Recomendado):**
+---
+
+## 🛠 Pré-requisitos
+
+Para rodar este projeto, você precisará do **Python 3.10+** instalado em sua máquina.
+
+As dependências principais são:
+* Flask & Flask-SQLAlchemy (Backend e Banco de Dados)
+* Flask-CORS (Comunicação com o Frontend)
+* PyWhatKit & smtplib (Automações RPA)
+* `google-genai` (SDK oficial atualizado do Gemini)
+* PyNgrok (Túneis de rede)
+* Python-dotenv (Gerenciamento de variáveis)
+
+---
+
+## ⚙️ Configuração do Ambiente
+
+### 1. Clonar e preparar o ambiente
 ```bash
+git clone <URL_DO_SEU_REPOSITORIO>
+cd portal_vagas_api
 python -m venv venv
 
-# Para ativar no Windows: 
+# Ative o ambiente virtual (Windows)
 venv\Scripts\activate
 
-# Para ativar no Linux/Mac: 
+# Ative o ambiente virtual (Linux/Mac)
 source venv/bin/activate
 ```
 
-**3. Instale as dependências exigidas no projeto:**
+### 2. Instalar as Dependências
 ```bash
-pip install flask flask-sqlalchemy flask-cors google-generativeai pywhatkit streamlit openpyxl schedule plyer pyngrok python-dotenv
+pip install Flask Flask-SQLAlchemy Flask-Cors pywhatkit python-dotenv pyngrok google-genai
 ```
 
-**4. Configuração das Variáveis de Ambiente (`.env`):**
-Para manter suas chaves e senhas seguras, crie um arquivo chamado exatamente `.env` na raiz do projeto (na mesma pasta de `app.py`) e adicione as suas configurações seguindo este modelo:
+### 3. Configurar Variáveis de Ambiente (`.env`)
+Crie um arquivo chamado `.env` na raiz do projeto (mesmo nível do `run.py`) e insira as suas credenciais:
 
 ```env
-# Configurações do Servidor
+# Banco de Dados
+DATABASE_URL=sqlite:///../portal_vagas.db
 FLASK_PORT=5000
-DATABASE_URL=sqlite:///portal_vagas.db
 
-# Credenciais e Chaves de API
-GEMINI_API_KEY=sua_chave_do_gemini_aqui
+# IA - Google Gemini
+GEMINI_API_KEY=sua_chave_de_api_gemini_aqui
 
-# Configurações do Ngrok
-NGROK_AUTH_TOKEN=seu_token_do_ngrok_aqui
-NGROK_DOMAIN=seu-dominio-estatico.ngrok-free.dev # Opcional (apague a linha se não tiver)
+# Automação de E-mail (Requer senha de aplicativo do Gmail)
+EMAIL_REMETENTE=seu_email@gmail.com
+EMAIL_SENHA_APP=sua_senha_de_aplicativo_aqui
 
-# Credenciais de Automação de E-mail (RPA)
-EMAIL_REMETENTE=seu-email@gmail.com
-EMAIL_SENHA_APP=sua_senha_de_aplicativo_de_16_digitos_aqui
+# Túnel Ngrok (Opcional, mas recomendado)
+NGROK_AUTH_TOKEN=seu_token_ngrok_aqui
 ```
+> **Nota sobre o E-mail:** A senha de app do Gmail exige que a Autenticação de 2 Fatores esteja ativada na sua conta Google.
 
 ---
 
-## 🗺️ Endpoints da API REST (Portal de Vagas)
+## ▶️ Como Executar
 
-O backend possui suporte a operações CRUD completas para as entidades do sistema.
+Com o ambiente virtual ativado e o `.env` configurado, basta rodar o arquivo principal:
 
-| Método | Rota | Descrição |
-| :--- | :--- | :--- |
-| **GET** | `/` | Rota raiz de conexão (Health Check) para o botão "Testar conexão" do frontend. |
-| **GET** | `/vagas` | Lista todas as vagas disponíveis. |
-| **GET** | `/vagas/<id>` | Busca os dados de uma vaga específica pelo seu ID. |
-| **POST** | `/vagas` | Cria uma nova vaga. |
-| **PUT** | `/vagas/<id>` | Atualiza os dados de uma vaga existente. |
-| **DELETE** | `/vagas/<id>`| Remove uma vaga do sistema. |
-| **POST** | `/candidatos` | Cadastra um novo candidato (valida e-mail único). |
-| **POST** | `/inscricoes` | Relaciona candidato a uma vaga e dispara o RPA em segundo plano (E-mail e WhatsApp). |
-| **POST** | `/chat` | Envia mensagens para o Chatbot (Gemini IA com reconhecimento de intenção). |
-
----
-
-## 🚀 Como Executar a Aplicação
-
-Este projeto é dividido em frentes diferentes. Siga os passos abaixo para testar cada uma delas:
-
-### 🟢 1. Rodando o Portal de Vagas (Sistema Principal)
-
-O backend (API) deve estar rodando para que o frontend consiga exibir as vagas, realizar cadastros de candidatos e processar o chatbot.
-
-**Passo A: Iniciar o Servidor Flask e o Túnel Ngrok**
 ```bash
-python app.py
+python run.py
 ```
-> **Nota de Execução:** O banco de dados `portal_vagas.db` e a pasta `/logs` serão criados automaticamente. Caso o banco esteja vazio, uma carga inicial (seed) de vagas de teste será inserida. No terminal, a URL pública gerada pelo ngrok será exibida.
 
-**Passo B: Configurar e Acessar o Frontend**
-Copie a URL do ngrok gerada no terminal e atualize a variável de rota base da API no código do seu frontend. Em seguida, abra o arquivo principal HTML no seu navegador web padrão.
+No console, você verá que o servidor Flask iniciou e o Ngrok gerou uma URL pública (ex: `https://abcd-123.ngrok-free.app`). Use essa URL para testar os endpoints ou conectar o seu frontend.
 
-**Passo C: Testar as Automações (RPA Integrado e Assíncrono)**
-Você não precisa mais rodar scripts de automação manualmente no terminal, nem se preocupar com travamentos de tela. No frontend, cadastre um candidato e faça uma inscrição em qualquer vaga. O backend criará uma `Thread` independente que registrará os logs, enviará o E-mail e abrirá o WhatsApp Web automaticamente no navegador do servidor, mantendo a experiência do usuário fluida!
-
-### 🔵 2. Rodando o Sistema de Controle de Estoque (Paper)
-
-O sistema secundário utiliza o Streamlit para renderizar o painel interativo.
-
-1.  Abra um novo terminal e certifique-se de que o ambiente virtual (`venv`) está ativo.
-2.  Navegue até o diretório do projeto de estoque.
-3.  Execute a aplicação com o comando nativo do Streamlit:
-    ```bash
-    streamlit run app_estoque.py
-    ```
-4.  O painel abrirá automaticamente no navegador. Os dados manipulados serão atualizados em tempo real na planilha (via `openpyxl`) e no banco local.
+> **Primeira execução:** O banco de dados SQLite (`portal_vagas.db`) será criado automaticamente, e uma carga inicial de 3 vagas (Seed) será inserida para facilitar os testes!
 
 ---
 
-## 📄 Notas Adicionais para a Apresentação Presencial
+## 📡 Endpoints Principais (Controllers)
 
-* **Público-Alvo:** O sistema deve ser demonstrado com o contexto voltado para os alunos de Processos Gerenciais.
-* **Demonstração ao Vivo do RPA:** A automação de disparo de e-mail e WhatsApp foi integrada à rota de candidaturas. Ao demonstrar, simule uma candidatura real para um integrante da turma-alvo usando o frontend. Mostre os arquivos gerados na pasta `/logs` para comprovar a auditoria do sistema.
-* **Importante para o WhatsApp:** Garanta que o WhatsApp Web do navegador padrão utilizado pela máquina da apresentação esteja previamente logado e com a sessão ativa **antes** de testar a inscrição no frontend. Isso evita falhas de timeout do `pywhatkit` ao tentar carregar a aba.
-* **Acessibilidade:** O link do ngrok exibido no terminal pode ser compartilhado com os avaliadores e alunos para que eles testem o frontend, o chat de IA e o consumo da API em tempo real diretamente dos próprios smartphones ou notebooks.
+### 📌 Vagas (`/vagas`)
+* `GET /vagas`: Lista todas as vagas.
+* `POST /vagas`: Cria uma nova vaga (Exige: `titulo`, `descricao`).
+* `GET /vagas/<id>`: Busca os detalhes de uma vaga específica.
+* `PUT /vagas/<id>`: Atualiza os dados de uma vaga.
+* `DELETE /vagas/<id>`: Remove uma vaga.
+
+### 📌 Candidatos (`/candidatos`)
+* `POST /candidatos`: Cadastra um candidato (Exige: `nome`, `email`, opcional: `telefone`).
+
+### 📌 Inscrições & RPA (`/inscricoes`)
+* `POST /inscricoes`: Registra o candidato em uma vaga (Exige: `candidato_id`, `vaga_id`).
+  * 🔔 **Trigger RPA:** O sistema dispara, em segundo plano (`threading`), as mensagens de notificação via WhatsApp (Web) e E-mail.
+
+### 📌 Assistente Virtual (`/chat`)
+* `POST /chat`: Interage com o chatbot IA.
+  * **Payload esperado:** `{"mensagem": "Tem vaga para programador?"}`
+  * **Como funciona:** O `chatbot.py` pega a pergunta, lê o banco de dados em tempo real, injeta o contexto e devolve uma resposta formulada pelo Gemini.
+
+---
+
+## 📝 Observações sobre o WhatsApp Web
+A automação `PyWhatKit` abre o WhatsApp Web no navegador padrão da sua máquina. 
+* É necessário estar logado previamente no WhatsApp Web.
+* Durante a execução do `/inscricoes`, o sistema abrirá abas, digitará a mensagem e as fechará automaticamente. Evite mexer no mouse enquanto o disparo estiver acontecendo.
