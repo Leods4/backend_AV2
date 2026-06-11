@@ -1,8 +1,7 @@
 import os
-import time
 import logging
 import smtplib
-import requests
+import pywhatkit
 from pathlib import Path
 from email.message import EmailMessage
 
@@ -86,25 +85,22 @@ def enviar_email_smtp(destinatario: str, nome: str, vaga: str, empresa: str, lin
     email_logger.info("E-mail enviado com sucesso para %s", destinatario)
 
 # ====================================================================
-# --- FUNÇÕES DE WHATSAPP (Cloud API - Meta) ---
+# --- FUNÇÕES DE WHATSAPP (Pywhatkit) ---
 # ====================================================================
 
-def obter_credenciais_whatsapp() -> tuple[str, str]:
-    token = os.getenv("WHATSAPP_TOKEN")
-    phone_id = os.getenv("WHATSAPP_PHONE_ID")
-
-    if not token or not phone_id:
-        raise ValueError(
-            "Defina WHATSAPP_TOKEN e WHATSAPP_PHONE_ID no arquivo .env."
-        )
-    return token, phone_id
-
-def validar_numero(numero: str) -> str:
-    # A API oficial da Meta espera o número (DDI + DDD + Número) sem o sinal de '+' ou espaços
-    numero = numero.strip().replace("+", "").replace("-", "").replace(" ", "")
-    if not numero.isdigit():
+def formatar_numero_pywhatkit(numero: str) -> str:
+    """Limpa o número e garante que ele tenha o formato +55XXXXXXXXXXX"""
+    numero_limpo = numero.strip().replace("+", "").replace("-", "").replace(" ", "")
+    
+    if not numero_limpo.isdigit():
         raise ValueError("O número de telefone deve conter apenas dígitos após a limpeza.")
-    return numero
+    
+    # Adiciona o DDI do Brasil (55) se não houver
+    if not numero_limpo.startswith("55"):
+        numero_limpo = f"55{numero_limpo}"
+        
+    # Pywhatkit exige o sinal de '+' na frente
+    return f"+{numero_limpo}"
 
 def montar_mensagem(nome: str, vaga: str, empresa: str, link: str | None = None) -> str:
     mensagem = (
@@ -116,42 +112,23 @@ def montar_mensagem(nome: str, vaga: str, empresa: str, link: str | None = None)
         mensagem += f"\nLink: {link}"
     return mensagem
 
-def enviar_whatsapp_api(numero: str, mensagem: str) -> None:
-    whatsapp_logger.info("Iniciando envio de WhatsApp via API para %s", numero)
+def enviar_whatsapp_pywhatkit(numero_formatado: str, mensagem: str) -> None:
+    whatsapp_logger.info("Iniciando envio via Pywhatkit para %s", numero_formatado)
     
     try:
-        token, phone_id = obter_credenciais_whatsapp()
-    except ValueError as e:
-        whatsapp_logger.error(f"[RPA ERRO] {e}")
-        raise
-
-    url = f"https://graph.facebook.com/v18.0/{phone_id}/messages"
-    
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-    
-    payload = {
-        "messaging_product": "whatsapp",
-        "recipient_type": "individual",
-        "to": numero,
-        "type": "text",
-        "text": {
-            "preview_url": False,
-            "body": mensagem
-        }
-    }
-
-    resposta = requests.post(url, headers=headers, json=payload)
-
-    if resposta.status_code in (200, 201):
-        whatsapp_logger.info("WhatsApp enviado com sucesso via API para %s", numero)
-    else:
-        whatsapp_logger.error(
-            f"Falha ao enviar WhatsApp para {numero}. Status: {resposta.status_code} - Retorno: {resposta.text}"
+        # wait_time=15: Dá 15 segundos para o WhatsApp Web carregar completamente.
+        # tab_close=True e close_time=4: Fecha a aba 4 segundos após o envio para não acumular abas abertas.
+        pywhatkit.sendwhatmsg_instantly(
+            phone_no=numero_formatado, 
+            message=mensagem, 
+            wait_time=15, 
+            tab_close=True, 
+            close_time=4
         )
-        resposta.raise_for_status()
+        whatsapp_logger.info("WhatsApp enviado com sucesso para %s", numero_formatado)
+    except Exception as e:
+        whatsapp_logger.error(f"Falha ao enviar WhatsApp para {numero_formatado}. Erro: {e}")
+        raise
 
 # ====================================================================
 # --- ORQUESTRADOR PRINCIPAL ---
@@ -175,9 +152,7 @@ def executar_automacoes_RPA(email, nome, telefone, titulo_vaga):
     # 2. Tentativa de envio do WhatsApp
     try:
         if telefone and telefone.lower() != 'não informado':
-            # Formata o número removendo o "+" caso exista ou forçando o DDI 55
-            numero_bruto = telefone if telefone.startswith('+') else f"55{telefone}"
-            numero_limpo = validar_numero(numero_bruto)
+            numero_formatado = formatar_numero_pywhatkit(telefone)
 
             mensagem = montar_mensagem(
                 nome=nome,
@@ -185,7 +160,8 @@ def executar_automacoes_RPA(email, nome, telefone, titulo_vaga):
                 empresa="Portal de Vagas AV2",
                 link=None
             )
-            enviar_whatsapp_api(numero=numero_limpo, mensagem=mensagem)
+            
+            enviar_whatsapp_pywhatkit(numero_formatado=numero_formatado, mensagem=mensagem)
     except Exception as e:
-        whatsapp_logger.error(f"[RPA ERRO] Falha na API do WhatsApp: {e}")
-        print(f"[RPA ERRO] Falha na API do WhatsApp: {e}")
+        whatsapp_logger.error(f"[RPA ERRO] Falha no Pywhatkit: {e}")
+        print(f"[RPA ERRO] Falha no Pywhatkit: {e}")
