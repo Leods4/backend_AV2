@@ -3,7 +3,7 @@
 Uma API RESTful desenvolvida em Flask para gerenciamento de vagas de emprego, candidatos e inscrições, estruturada sob a divisão de responsabilidades entre **Rotas** e **Serviços (Services)** para garantir alta escalabilidade, testes facilitados e manutenção modular.
 
 O projeto inclui funcionalidades avançadas, como:
-- **Automação RPA:** Disparo de notificações via WhatsApp (PyWhatKit) e E-mail (SMTP) em segundo plano.
+- **Automação RPA:** Disparo de notificações via WhatsApp (Cloud API oficial da Meta) e E-mail (SMTP) em segundo plano.
 - **Inteligência Artificial:** Chatbot integrado ao Google Gemini (via API oficial) para atendimento inteligente aos candidatos.
 - **Túnel Público Dinâmico:** Integração nativa com Ngrok para exposição imediata da API local para a internet.
 
@@ -25,7 +25,7 @@ portal_vagas_api/
 │       ├── vaga_service.py       # CRUD completo e manipulação de Vagas
 │       ├── candidato_service.py  # CRUD completo e validações de Candidatos
 │       ├── inscricao_service.py  # CRUD completo, validações de chaves e disparo RPA
-│       ├── rpa.py                # Orquestração assíncrona do E-mail e WhatsApp
+│       ├── rpa.py                # Orquestração assíncrona do E-mail e WhatsApp (API)
 │       └── chatbot.py            # Configuração do Client e Prompts do Google Gemini
 │
 ├── logs/                     # Diretório gerado automaticamente para os logs (RPA)
@@ -42,7 +42,7 @@ Para rodar este projeto, você precisará do **Python 3.10+** instalado em sua m
 As dependências principais são:
 * Flask & Flask-SQLAlchemy (Backend e Banco de Dados)
 * Flask-CORS (Comunicação com o Frontend)
-* PyWhatKit & smtplib (Automações RPA)
+* requests & smtplib (Automações RPA via API e E-mail)
 * `google-genai` (SDK oficial atualizado do Gemini)
 * PyNgrok (Túneis de rede)
 * Python-dotenv (Gerenciamento de variáveis)
@@ -66,7 +66,7 @@ source venv/bin/activate
 
 ### 2. Instalar as Dependências
 ```bash
-pip install Flask Flask-SQLAlchemy Flask-Cors pywhatkit python-dotenv pyngrok google-genai
+pip install Flask Flask-SQLAlchemy Flask-Cors requests python-dotenv pyngrok google-genai
 ```
 
 ### 3. Configurar Variáveis de Ambiente (`.env`)
@@ -83,6 +83,10 @@ GEMINI_API_KEY=sua_chave_de_api_gemini_aqui
 # Automação de E-mail (Requer senha de aplicativo do Gmail)
 EMAIL_REMETENTE=seu_email@gmail.com
 EMAIL_SENHA_APP=sua_senha_de_aplicativo_aqui
+
+# Automação WhatsApp (Meta Cloud API)
+WHATSAPP_TOKEN=seu_token_de_acesso_aqui
+WHATSAPP_PHONE_ID=id_do_seu_numero_aqui
 
 # Túnel Ngrok (Opcional, mas recomendado)
 NGROK_AUTH_TOKEN=seu_token_ngrok_aqui
@@ -126,7 +130,7 @@ Todas as rotas HTTP abaixo delegam o processamento de dados e o controle de stat
 ### 📌 Inscrições & RPA (`/inscricoes`)
 * `GET /inscricoes`: Lista todas as inscrições efetuadas.
 * `POST /inscricoes`: Registra o candidato em uma vaga (Exige: `candidato_id`, `vaga_id`).
-  * 🔔 **Trigger RPA:** O serviço dispara, em segundo plano (`threading`), as mensagens automáticas de notificação via WhatsApp (Web) e E-mail sem bloquear a resposta HTTP da API.
+  * 🔔 **Trigger RPA:** O serviço dispara, em segundo plano (`threading`), as mensagens automáticas de notificação via WhatsApp (API Oficial) e E-mail de forma instantânea, sem bloquear a resposta HTTP da API.
 * `GET /inscricoes/<id>`: Busca uma inscrição específica pelo ID.
 * `PUT /inscricoes/<id>`: Atualiza os dados de uma inscrição (Valida se os novos IDs de vaga ou candidato existem).
 * `DELETE /inscricoes/<id>`: Cancela/remove uma inscrição.
@@ -152,7 +156,7 @@ Todas as rotas HTTP abaixo delegam o processamento de dados e o controle de stat
 
 ---
 
-## 📝 Observações sobre o WhatsApp Web
-A automação gerenciada pelo serviço `rpa.py` abre o WhatsApp Web no navegador padrão do servidor ou máquina local:
-* É necessário estar logado previamente na conta do WhatsApp Web no navegador padrão.
-* Durante o processamento do `/inscricoes`, o robô abrirá abas do navegador, preencherá o texto e fechará as abas de forma autônoma. Recomenda-se não mover o mouse e teclado durante o ciclo do PyWhatKit para evitar interrupções.
+## 📝 Observações sobre o WhatsApp (Cloud API)
+A automação agora utiliza a **WhatsApp Cloud API** oficial da Meta, executando os envios de forma 100% *headless* (sem navegador) e instantânea.
+* É necessário criar um aplicativo no [Meta for Developers](https://developers.facebook.com/) para gerar o seu `WHATSAPP_TOKEN` e `WHATSAPP_PHONE_ID`.
+* **Ambiente de Testes:** Caso esteja utilizando o número de testes gratuito fornecido pela Meta, lembre-se de que a API só enviará mensagens para números que você cadastrou e verificou previamente no seu painel de desenvolvedor. Tentar enviar para números não cadastrados resultará em erro na requisição.
