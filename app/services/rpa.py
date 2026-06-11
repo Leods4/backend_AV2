@@ -2,9 +2,9 @@ import os
 import time
 import logging
 import smtplib
+import requests
 from pathlib import Path
 from email.message import EmailMessage
-import pywhatkit
 
 # ====================================================================
 # --- SETUP DE LOGS ---
@@ -86,13 +86,24 @@ def enviar_email_smtp(destinatario: str, nome: str, vaga: str, empresa: str, lin
     email_logger.info("E-mail enviado com sucesso para %s", destinatario)
 
 # ====================================================================
-# --- FUNÇÕES DE WHATSAPP ---
+# --- FUNÇÕES DE WHATSAPP (Cloud API - Meta) ---
 # ====================================================================
 
+def obter_credenciais_whatsapp() -> tuple[str, str]:
+    token = os.getenv("WHATSAPP_TOKEN")
+    phone_id = os.getenv("WHATSAPP_PHONE_ID")
+
+    if not token or not phone_id:
+        raise ValueError(
+            "Defina WHATSAPP_TOKEN e WHATSAPP_PHONE_ID no arquivo .env."
+        )
+    return token, phone_id
+
 def validar_numero(numero: str) -> str:
-    numero = numero.strip()
-    if not numero.startswith("+"):
-        raise ValueError("O número deve estar no formato internacional, por exemplo: +5548999999999")
+    # A API oficial da Meta espera o número (DDI + DDD + Número) sem o sinal de '+' ou espaços
+    numero = numero.strip().replace("+", "").replace("-", "").replace(" ", "")
+    if not numero.isdigit():
+        raise ValueError("O número de telefone deve conter apenas dígitos após a limpeza.")
     return numero
 
 def montar_mensagem(nome: str, vaga: str, empresa: str, link: str | None = None) -> str:
@@ -105,17 +116,42 @@ def montar_mensagem(nome: str, vaga: str, empresa: str, link: str | None = None)
         mensagem += f"\nLink: {link}"
     return mensagem
 
-def enviar_whatsapp(numero: str, mensagem: str, esperar: int = 20, fechar_aba: bool = False) -> None:
-    whatsapp_logger.info("Iniciando envio de WhatsApp para %s", numero)
-    pywhatkit.sendwhatmsg_instantly(
-        phone_no=numero,
-        message=mensagem,
-        wait_time=esperar,
-        tab_close=fechar_aba,
-        close_time=5,
-    )
-    time.sleep(3)
-    whatsapp_logger.info("Fluxo de envio ao WhatsApp disparado com sucesso para %s", numero)
+def enviar_whatsapp_api(numero: str, mensagem: str) -> None:
+    whatsapp_logger.info("Iniciando envio de WhatsApp via API para %s", numero)
+    
+    try:
+        token, phone_id = obter_credenciais_whatsapp()
+    except ValueError as e:
+        whatsapp_logger.error(f"[RPA ERRO] {e}")
+        raise
+
+    url = f"https://graph.facebook.com/v18.0/{phone_id}/messages"
+    
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": numero,
+        "type": "text",
+        "text": {
+            "preview_url": False,
+            "body": mensagem
+        }
+    }
+
+    resposta = requests.post(url, headers=headers, json=payload)
+
+    if resposta.status_code in (200, 201):
+        whatsapp_logger.info("WhatsApp enviado com sucesso via API para %s", numero)
+    else:
+        whatsapp_logger.error(
+            f"Falha ao enviar WhatsApp para {numero}. Status: {resposta.status_code} - Retorno: {resposta.text}"
+        )
+        resposta.raise_for_status()
 
 # ====================================================================
 # --- ORQUESTRADOR PRINCIPAL ---
@@ -138,8 +174,10 @@ def executar_automacoes_RPA(email, nome, telefone, titulo_vaga):
 
     # 2. Tentativa de envio do WhatsApp
     try:
-        if telefone and telefone != 'Não informado':
-            numero_formatado = telefone if telefone.startswith('+') else f"+55{telefone}"
+        if telefone and telefone.lower() != 'não informado':
+            # Formata o número removendo o "+" caso exista ou forçando o DDI 55
+            numero_bruto = telefone if telefone.startswith('+') else f"55{telefone}"
+            numero_limpo = validar_numero(numero_bruto)
 
             mensagem = montar_mensagem(
                 nome=nome,
@@ -147,7 +185,7 @@ def executar_automacoes_RPA(email, nome, telefone, titulo_vaga):
                 empresa="Portal de Vagas AV2",
                 link=None
             )
-            enviar_whatsapp(numero=numero_formatado, mensagem=mensagem, esperar=20, fechar_aba=True)
+            enviar_whatsapp_api(numero=numero_limpo, mensagem=mensagem)
     except Exception as e:
-        whatsapp_logger.error(f"[RPA ERRO] Falha no fluxo do WhatsApp Web: {e}")
-        print(f"[RPA ERRO] Falha no fluxo do WhatsApp Web: {e}")
+        whatsapp_logger.error(f"[RPA ERRO] Falha na API do WhatsApp: {e}")
+        print(f"[RPA ERRO] Falha na API do WhatsApp: {e}")
